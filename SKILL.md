@@ -16,7 +16,7 @@ Default to Simplified Chinese for explanations and note bodies. Keep English ter
 3. Build a reading map before deep explanation: paper objective, section structure, key figures, a figure map, method spine, experiment spine, and likely uncertainty points.
 4. Explain in layers: problem background -> method structure -> inputs/outputs -> training supervision -> experiments -> limitations.
 5. Treat figures conservatively: prioritize framework diagrams, model diagrams, and experimental result figures. Automatic extraction is only candidate generation.
-6. Produce Markdown-first output: a stepwise explanation, a concise note, Markdown tables, or a vault note depending on the user's request.
+6. Produce Markdown-first output: by default, write detailed layered explanations or detailed notes; use concise summaries, recap tables, or compressed notes only when the user explicitly asks for them.
 7. If writing to a vault, maintain notes, metadata, PDFs, assets, and navigation/index pages, then verify the result with local evidence.
 
 ## Output Preferences
@@ -27,7 +27,8 @@ Stable preferences:
 
 - Chinese prose by default; keep technical English terms when useful.
 - Start with a reading map when the user says they want to read slowly, fully understand, or "慢慢来".
-- When the user asks for review material, compress into Markdown tables or method-grouped short notes.
+- Default to detailed section-by-section explanation and notes. Do not compress to a short summary by default.
+- Compress into Markdown tables, method-grouped short notes, or concise recap only when the user explicitly asks for brevity, summary, review material, recap, tables, or compression.
 - Avoid empty macro headings such as "总览", "速览", "统一理解", or "总结" unless the user asks for them.
 - Do not add heading numbers by default.
 - For robotics, VLA, imitation learning, and post-training papers, preserve inputs, outputs, hardware assumptions, data sources, supervision labels, control frequencies, evaluation tasks, and failure boundaries.
