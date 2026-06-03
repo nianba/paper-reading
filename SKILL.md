@@ -76,6 +76,8 @@ For slow reading or "完全读懂" requests, create a figure map before section-
 
 During slow reading, preview or render the relevant figure in a temporary location before explaining the mechanism it supports when practical. Do not persist figure assets unless producing a note, vault entry, or user-requested artifact.
 
+Do not only inspect figures internally during slow reading. Before explaining a core mechanism, include the relevant original figure, table, screenshot, or rendered asset in the user-facing response when available. If no relevant visual source exists, say so before explaining from text or equations.
+
 Prefer high-value figures:
 
 - Overall framework or pipeline.
