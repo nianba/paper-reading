@@ -13,7 +13,7 @@ Default to Simplified Chinese for explanations and note bodies. Keep English ter
 
 1. Identify the paper source: arXiv URL/ID, PDF URL, local PDF path, or an existing vault entry.
 2. Extract or verify metadata: title, authors, year, venue, arXiv ID, DOI, code, dataset, and stable dedupe key when available.
-3. Build a reading map before deep explanation: paper objective, section structure, key figures, method spine, experiment spine, and likely uncertainty points.
+3. Build a reading map before deep explanation: paper objective, section structure, key figures, a figure map, method spine, experiment spine, and likely uncertainty points.
 4. Explain in layers: problem background -> method structure -> inputs/outputs -> training supervision -> experiments -> limitations.
 5. Treat figures conservatively: prioritize framework diagrams, model diagrams, and experimental result figures. Automatic extraction is only candidate generation.
 6. Produce Markdown-first output: a stepwise explanation, a concise note, Markdown tables, or a vault note depending on the user's request.
@@ -31,6 +31,7 @@ Stable preferences:
 - Avoid empty macro headings such as "总览", "速览", "统一理解", or "总结" unless the user asks for them.
 - Do not add heading numbers by default.
 - For robotics, VLA, imitation learning, and post-training papers, preserve inputs, outputs, hardware assumptions, data sources, supervision labels, control frequencies, evaluation tasks, and failure boundaries.
+- When a paper's figures are central to understanding, include a small set of high-value original figures in the final Markdown note by default unless the user asks for text-only output.
 
 Read `references/note-style.md` when producing a polished note, Markdown table, or recap artifact.
 
@@ -66,12 +67,22 @@ Do not treat layout-extracted text as authoritative when section order is visibl
 
 Use `scripts/extract_figures.py` only as a candidate generator. It may render pages and identify likely figure captions, but it should not be treated as final visual truth.
 
+For slow reading or "完全读懂" requests, create a figure map before section-by-section explanation:
+
+- Key figure or table.
+- Concept, mechanism, or result it explains.
+- The section or reading step where it should be shown.
+
+During slow reading, preview or render the relevant figure in a temporary location before explaining the mechanism it supports when practical. Do not persist figure assets unless producing a note, vault entry, or user-requested artifact.
+
 Prefer high-value figures:
 
 - Overall framework or pipeline.
 - Model architecture or data flow.
 - Key training/evaluation setup.
 - Main result or ablation table/plot.
+
+When writing Markdown notes, place selected figures near the corresponding explanation rather than in a separate gallery. For non-vault notes, create a nearby `assets/<note-slug>/` directory and use relative image paths. For vault notes, use the vault assets layout.
 
 When auto-cropping is weak, use diagnostics plus a reviewed manual crop manifest. Never block note creation only because figure extraction failed.
 

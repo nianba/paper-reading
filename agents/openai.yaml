@@ -1,7 +1,7 @@
 interface:
   display_name: "Paper Reading"
-  short_description: "Read papers into Chinese Markdown notes"
-  default_prompt: "Use $paper-reading to read this paper slowly, explain the mechanism, and produce a concise Chinese Markdown recap."
+  short_description: "Read papers into figure-aware Chinese Markdown notes"
+  default_prompt: "Use $paper-reading to read this paper slowly, explain the mechanism with key figures, and produce a concise Chinese Markdown recap."
 
 policy:
   allow_implicit_invocation: true
