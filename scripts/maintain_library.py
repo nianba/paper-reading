@@ -141,13 +141,20 @@ def figure_markdown(figures: list[dict], slug: str, dedupe_key: str) -> str:
     return "\n".join(lines)
 
 
-def replace_managed_block(note_path: Path, block: str, dedupe_key: str) -> None:
+def replace_managed_block(note_path: Path, block: str, dedupe_key: str, anchor: str | None = None) -> None:
     text = note_path.read_text(encoding="utf-8") if note_path.exists() else ""
     begin = f"<!-- figures: {dedupe_key} begin -->"
     end = f"<!-- figures: {dedupe_key} end -->"
     pattern = re.compile(re.escape(begin) + r".*?" + re.escape(end), re.DOTALL)
     if pattern.search(text):
         text = pattern.sub(block, text)
+    elif anchor and anchor in text:
+        lines = text.rstrip().splitlines()
+        for index, line in enumerate(lines):
+            if anchor in line:
+                lines[index + 1:index + 1] = ["", block, ""]
+                text = "\n".join(lines)
+                break
     else:
         text = text.rstrip() + "\n\n" + block + "\n"
     note_path.write_text(text.rstrip() + "\n", encoding="utf-8")
@@ -160,7 +167,8 @@ def main() -> int:
     parser.add_argument("--note", help="Optional Markdown note to copy into vault.")
     parser.add_argument("--pdf", help="Optional PDF to copy into vault.")
     parser.add_argument("--figures", help="Optional figure assets/candidates JSON.")
-    parser.add_argument("--insert-figures", action="store_true", help="Insert copied figures into the managed note block.")
+    parser.add_argument("--insert-figures", action="store_true", help="Insert copied figures into a managed fallback note block.")
+    parser.add_argument("--figures-anchor", help="Insert the managed figure block after the first line containing this text.")
     args = parser.parse_args()
 
     vault = Path(args.vault).expanduser()
@@ -184,7 +192,7 @@ def main() -> int:
     figures = load_figures(args.figures)
     copied_figures = copy_figures(figures, paths["assets"], slug)
     if args.insert_figures and copied_figures and note_path:
-        replace_managed_block(Path(note_path), figure_markdown(copied_figures, slug, dedupe), dedupe)
+        replace_managed_block(Path(note_path), figure_markdown(copied_figures, slug, dedupe), dedupe, args.figures_anchor)
 
     entry = render_entry(metadata, slug)
     upsert_marked_entry(paths["navigation"] / "Papers Index.md", "Papers Index", entry, dedupe)

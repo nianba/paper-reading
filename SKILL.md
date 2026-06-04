@@ -34,6 +34,7 @@ Stable preferences:
 - For formulas and equations, prefer readable rendered LaTeX over code blocks by default; follow each formula with concise Chinese explanations of variables and intuition, and provide copyable source only when the user asks.
 - For robotics, VLA, imitation learning, and post-training papers, preserve inputs, outputs, hardware assumptions, data sources, supervision labels, control frequencies, evaluation tasks, and failure boundaries.
 - When a paper's figures are central to understanding, include a small set of high-value original figures in the final Markdown note by default unless the user asks for text-only output.
+- Default paper notes should be durable Markdown. If current context exposes an applicable skill or tool for lightweight presentation enhancement, use it only after the content draft is complete, keep Markdown as canonical, and do not hard-code a specific enhancer.
 
 Read `references/note-style.md` when producing a polished note, Markdown table, or recap artifact.
 
@@ -88,7 +89,7 @@ Prefer high-value figures:
 - Key training/evaluation setup.
 - Main result or ablation table/plot.
 
-When writing Markdown notes, place selected figures near the corresponding explanation rather than in a separate gallery. For non-vault notes, create a nearby `assets/<note-slug>/` directory and use relative image paths. For vault notes, use the vault assets layout.
+When writing Markdown notes, place selected figures near the corresponding explanation rather than in a separate gallery. Use `scripts/maintain_library.py --insert-figures` only as a managed fallback, or with `--figures-anchor` when the note has an explicit insertion point. Do not use both hand-written figure blocks and manifest-driven insertion for the same note. For non-vault notes, create a nearby `assets/<note-slug>/` directory and use relative image paths. For vault notes, use the vault assets layout.
 
 When source images are not usable or auto-cropping is weak, use diagnostics plus a reviewed manual crop manifest. Never block note creation only because figure extraction failed.
 
@@ -110,7 +111,7 @@ paper-vault/
 
 Use scripts as helpers, not as user-facing manual steps:
 
-- `scripts/doctor.py`: check local tools, vault writability, and optional network status.
+- `scripts/doctor.py`: check local tools, vault writability, and optional network status. Optional network checks should not make local readiness fail unless `--require-network` is used.
 - `scripts/ingest_paper.py`: extract metadata and write JSON.
 - `scripts/extract_tex_source.py`: fetch arXiv source for source-assisted reading and source image lookup.
 - `scripts/extract_figures.py`: render pages and produce figure candidates or manual-crop assets.

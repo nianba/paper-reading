@@ -158,7 +158,7 @@ def metadata_from_local_pdf(pdf: Path) -> tuple[dict, list[str]]:
         "title": title,
         "authors": [],
         "year": year,
-        "venue": info.get("producer") or None,
+        "pdf_producer": info.get("producer") or None,
         "arxiv_id": arxiv_id,
         "doi": doi_match.group(0) if doi_match else None,
         "pdf_path": str(pdf),

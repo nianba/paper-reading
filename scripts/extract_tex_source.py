@@ -33,8 +33,11 @@ def normalize_arxiv_id(value: str) -> str | None:
 
 
 def safe_path(base: Path, name: str) -> Path:
+    base = base.resolve()
     target = (base / name).resolve()
-    if not str(target).startswith(str(base.resolve())):
+    try:
+        target.relative_to(base)
+    except ValueError:
         raise ValueError(f"unsafe archive member path: {name}")
     return target
 

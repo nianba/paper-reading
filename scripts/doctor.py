@@ -54,7 +54,7 @@ def build_report(args: argparse.Namespace) -> dict:
     vault = check_vault(args.vault)
     network = (
         check_network(args.network_url, args.timeout)
-        if args.check_network
+        if args.check_network or args.require_network
         else {"checked": False, "ok": None, "url": args.network_url}
     )
 
@@ -63,11 +63,12 @@ def build_report(args: argparse.Namespace) -> dict:
     if args.require_poppler:
         local_ok = local_ok and all(item["available"] for item in tools.values())
 
-    ok = bool(local_ok and (network["ok"] if network["checked"] else True))
+    ok = bool(local_ok and (network["ok"] if args.require_network else True))
     return {
         "ok": ok,
         "local_ok": bool(local_ok),
         "network_ok": network["ok"],
+        "network_required": bool(args.require_network),
         "tools": tools,
         "vault": vault,
         "network": network,
@@ -77,7 +78,16 @@ def build_report(args: argparse.Namespace) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--vault", help="Path to a paper-vault root to check.")
-    parser.add_argument("--check-network", action="store_true", help="Check optional network availability.")
+    parser.add_argument(
+        "--check-network",
+        action="store_true",
+        help="Check optional network availability without making it part of local readiness.",
+    )
+    parser.add_argument(
+        "--require-network",
+        action="store_true",
+        help="Treat network failure as an overall readiness failure.",
+    )
     parser.add_argument("--network-url", default="https://arxiv.org", help="URL used for optional network check.")
     parser.add_argument("--timeout", type=float, default=5.0, help="Network timeout in seconds.")
     parser.add_argument(

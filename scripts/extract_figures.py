@@ -38,19 +38,58 @@ def extract_caption_candidates(pdf: Path) -> list[dict]:
     return captions
 
 
-def render_pages(pdf: Path, out_dir: Path, slug: str, max_pages: int, dpi: int) -> tuple[list[Path], list[str]]:
+def parse_page_numbers(value: str | None, max_pages: int) -> list[int]:
+    if not value:
+        return list(range(1, max_pages + 1))
+
+    pages: list[int] = []
+    for chunk in value.split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        if "-" in chunk:
+            start_text, end_text = chunk.split("-", 1)
+            start = int(start_text)
+            end = int(end_text)
+            if start > end:
+                raise ValueError(f"invalid page range: {chunk}")
+            pages.extend(range(start, end + 1))
+        else:
+            pages.append(int(chunk))
+
+    if any(page < 1 for page in pages):
+        raise ValueError("page numbers must be positive")
+    return sorted(set(pages))
+
+
+def render_pages(pdf: Path, out_dir: Path, slug: str, page_numbers: list[int], dpi: int) -> tuple[list[Path], list[str]]:
     diagnostics = []
     if not shutil.which("pdftoppm"):
         return [], ["pdftoppm is not available; page rendering skipped"]
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    prefix = out_dir / f"{slug}-page"
-    args = ["pdftoppm", "-png", "-r", str(dpi), "-f", "1", "-l", str(max_pages), str(pdf), str(prefix)]
-    result = run(args)
-    if result.returncode != 0:
-        diagnostics.append(result.stderr.strip() or "pdftoppm failed")
-        return [], diagnostics
-    pages = sorted(out_dir.glob(f"{slug}-page-*.png"))
+    pages = []
+    for page_number in page_numbers:
+        prefix = out_dir / f"{slug}-page-{page_number}"
+        args = [
+            "pdftoppm",
+            "-png",
+            "-singlefile",
+            "-r",
+            str(dpi),
+            "-f",
+            str(page_number),
+            "-l",
+            str(page_number),
+            str(pdf),
+            str(prefix),
+        ]
+        result = run(args)
+        page = prefix.with_suffix(".png")
+        if result.returncode != 0 or not page.exists():
+            diagnostics.append(result.stderr.strip() or f"pdftoppm failed for page {page_number}")
+            continue
+        pages.append(page)
     return pages, diagnostics
 
 
@@ -129,6 +168,7 @@ def main() -> int:
     parser.add_argument("--out-dir", required=True, help="Output directory for rendered pages/assets.")
     parser.add_argument("--slug", help="Paper slug; defaults to PDF stem.")
     parser.add_argument("--max-pages", type=int, default=6, help="Number of pages to render for candidates.")
+    parser.add_argument("--pages", help="Explicit pages or ranges to render, such as 1,3-5,9.")
     parser.add_argument("--dpi", type=int, default=180)
     parser.add_argument("--manifest", help="Manual crop manifest JSON.")
     parser.add_argument("--diagnostics-out", help="Diagnostics JSON path.")
@@ -140,23 +180,28 @@ def main() -> int:
     out_dir = Path(args.out_dir).expanduser()
     page_dir = out_dir / "pages"
     asset_dir = out_dir / "assets"
+    try:
+        page_numbers = parse_page_numbers(args.pages, args.max_pages)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     diagnostics = []
     if not pdf.exists():
         diagnostics.append(f"PDF not found: {pdf}")
-        result = {"ok": False, "diagnostics": diagnostics, "candidates": [], "assets": []}
+        result = {"ok": False, "diagnostics": diagnostics, "candidates": [], "caption_candidates": [], "assets": []}
     else:
         captions = extract_caption_candidates(pdf)
-        pages, render_diagnostics = render_pages(pdf, page_dir, slug, args.max_pages, args.dpi)
+        pages, render_diagnostics = render_pages(pdf, page_dir, slug, page_numbers, args.dpi)
         diagnostics.extend(render_diagnostics)
         candidates = []
-        for index, page in enumerate(pages, start=1):
-            caption = captions[index - 1]["caption"] if index - 1 < len(captions) else None
+        for page in pages:
+            match = re.search(r"-(\d+)\.png$", page.name)
+            page_number = int(match.group(1)) if match else None
             candidates.append({
-                "page": index,
+                "page": page_number,
                 "image": str(page),
-                "caption": caption,
-                "reason": "rendered_page_with_possible_caption" if caption else "rendered_page_candidate",
+                "caption": None,
+                "reason": "rendered_page_candidate",
             })
         manifest = load_manifest(args.manifest)
         assets, manifest_diagnostics = apply_manual_manifest(manifest, pages, asset_dir, slug)
@@ -167,6 +212,7 @@ def main() -> int:
             "slug": slug,
             "diagnostics": diagnostics,
             "candidates": candidates,
+            "caption_candidates": captions,
             "assets": assets,
             "note": "Automatic output is candidate generation; review important figures before final insertion.",
         }

@@ -16,7 +16,7 @@ Use this reference when creating final notes, recap tables, or polished Markdown
 Choose the structure from the user's intent:
 
 - "慢慢来", "完全读懂": start with a reading map, then explain one layer at a time.
-- "整理成笔记": produce a compact Markdown note whose sections match the paper's actual structure.
+- "整理成笔记": produce a structured Markdown note whose detail level follows the user request and paper complexity; make it compact only when the user asks.
 - "整理成表格", "适合回顾": use Markdown tables or method-grouped short notes.
 - "相关工作", "调研": separate directly related work, broader comparators, and engineering options.
 - "训练监督", "输入输出", "硬件": answer in causal slices and separate recorded data, reconstructed state, supervision labels, model input, and model output.
