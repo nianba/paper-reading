@@ -31,6 +31,7 @@ Stable preferences:
 - Compress into Markdown tables, method-grouped short notes, or concise recap only when the user explicitly asks for brevity, summary, review material, recap, tables, or compression.
 - Avoid empty macro headings such as "总览", "速览", "统一理解", or "总结" unless the user asks for them.
 - Do not add heading numbers by default.
+- For formulas and equations, prefer readable rendered LaTeX over code blocks by default; follow each formula with concise Chinese explanations of variables and intuition, and provide copyable source only when the user asks.
 - For robotics, VLA, imitation learning, and post-training papers, preserve inputs, outputs, hardware assumptions, data sources, supervision labels, control frequencies, evaluation tasks, and failure boundaries.
 - When a paper's figures are central to understanding, include a small set of high-value original figures in the final Markdown note by default unless the user asks for text-only output.
 
