@@ -89,7 +89,7 @@ Prefer high-value figures:
 - Key training/evaluation setup.
 - Main result or ablation table/plot.
 
-When writing Markdown notes, place selected figures near the corresponding explanation rather than in a separate gallery. Use `scripts/maintain_library.py --insert-figures` only as a managed fallback, or with `--figures-anchor` when the note has an explicit insertion point. Do not use both hand-written figure blocks and manifest-driven insertion for the same note. For non-vault notes, create a nearby `assets/<note-slug>/` directory and use relative image paths. For vault notes, use the vault assets layout.
+When writing Markdown notes, place selected figures near the corresponding explanation rather than in a separate gallery. Use `scripts/maintain_library.py --insert-figures` only as a managed fallback, or with `--figures-anchor` when the note has an explicit insertion point. Do not use both hand-written figure blocks and manifest-driven insertion for the same note. For non-vault notes, create a nearby `assets/<note-slug>/` directory and use relative image paths. For vault notes, use the vault assets layout. For PNG/SVG/PDF-converted figures with transparency or dark-mode readability risk, generate a white-background display version by default and reference that version in Markdown.
 
 When source images are not usable or auto-cropping is weak, use diagnostics plus a reviewed manual crop manifest. Never block note creation only because figure extraction failed.
 
