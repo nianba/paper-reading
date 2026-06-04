@@ -97,11 +97,15 @@ def load_figures(path: str | None) -> list[dict]:
     if isinstance(data, dict):
         if "assets" in data:
             return list(data["assets"])
+        if "source_image_assets" in data:
+            return list(data["source_image_assets"])
+        if "image_assets" in data:
+            return list(data["image_assets"])
         if "figures" in data:
             return list(data["figures"])
     if isinstance(data, list):
         return data
-    raise ValueError("figures JSON must be a list or object with assets/figures")
+    raise ValueError("figures JSON must be a list or object with assets/source_image_assets/image_assets/figures")
 
 
 def copy_figures(figures: list[dict], asset_root: Path, slug: str) -> list[dict]:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import tarfile
 import json
 import subprocess
 import sys
@@ -139,6 +140,104 @@ class PaperReadingScriptTests(unittest.TestCase):
             note = (vault / "papers" / "notes" / "figure-paper.md").read_text(encoding="utf-8")
             self.assertEqual(note.count("<!-- figures: arxiv:2601.00002 begin -->"), 1)
             self.assertEqual(note.count("![Pipeline]"), 1)
+
+    def test_source_image_manifest_insertion_preserves_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            metadata = {
+                "title": "Source Figure Paper",
+                "year": "2026",
+                "slug": "source-figure-paper",
+                "dedupe_key": "arxiv:2601.00003",
+            }
+            metadata_path = root / "metadata.json"
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+            note_path = root / "note.md"
+            note_path.write_text("# Source Figure Paper\n", encoding="utf-8")
+            image_path = root / "pipeline.png"
+            image_path.write_bytes(b"fake-image")
+            figures_path = root / "source-images.json"
+            figures_path.write_text(
+                json.dumps(
+                    {
+                        "source_image_assets": [
+                            {
+                                "path": str(image_path),
+                                "label": "pipeline",
+                                "caption": "Pipeline",
+                                "source": "tex-source",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            vault = root / "paper-vault"
+
+            for _ in range(2):
+                result = run_script(
+                    "maintain_library",
+                    "--vault",
+                    str(vault),
+                    "--metadata",
+                    str(metadata_path),
+                    "--note",
+                    str(note_path),
+                    "--figures",
+                    str(figures_path),
+                    "--insert-figures",
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["figures"][0]["source"], "tex-source")
+            note = (vault / "papers" / "notes" / "source-figure-paper.md").read_text(encoding="utf-8")
+            self.assertEqual(note.count("<!-- figures: arxiv:2601.00003 begin -->"), 1)
+            self.assertEqual(note.count("![Pipeline]"), 1)
+
+    def test_extract_tex_source_indexes_images_and_graphics_refs(self) -> None:
+        extract_tex = load_module("extract_tex_source")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source_dir = root / "source"
+            (source_dir / "figs").mkdir(parents=True)
+            (source_dir / "main.tex").write_text(
+                "\\includegraphics[width=0.9\\linewidth]{figs/pipeline}\n"
+                "\\includegraphics{figs/result.png}\n",
+                encoding="utf-8",
+            )
+            (source_dir / "figs" / "pipeline.pdf").write_bytes(b"%PDF-1.4 fake")
+            (source_dir / "figs" / "result.png").write_bytes(b"fake-image")
+            archive = root / "source.tar"
+            with tarfile.open(archive, "w") as tf:
+                for path in source_dir.rglob("*"):
+                    tf.add(path, arcname=path.relative_to(source_dir))
+
+            payload = extract_tex.unpack_archive(archive, root / "out", "2601.00004")
+
+            self.assertEqual(payload["kind"], "tar")
+            self.assertEqual({Path(path).name for path in payload["image_files"]}, {"pipeline.pdf", "result.png"})
+            refs = {item["reference"]: item for item in payload["graphics_refs"]}
+            self.assertIn("figs/pipeline", refs)
+            self.assertIn("figs/result.png", refs)
+            self.assertEqual(Path(refs["figs/pipeline"]["matches"][0]).name, "pipeline.pdf")
+            self.assertEqual(Path(refs["figs/result.png"]["matches"][0]).name, "result.png")
+            self.assertEqual(len(payload["source_image_assets"]), 2)
+            self.assertTrue(all(item["source"] == "tex-source" for item in payload["source_image_assets"]))
+
+    def test_extract_tex_source_pdf_image_conversion_fails_gracefully(self) -> None:
+        extract_tex = load_module("extract_tex_source")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            image = root / "figure.pdf"
+            image.write_bytes(b"%PDF-1.4 fake")
+
+            converted, diagnostics = extract_tex.convert_source_images([str(image)], root / "converted")
+
+            self.assertEqual(converted[0]["original_path"], str(image))
+            self.assertEqual(converted[0]["path"], str(image))
+            self.assertFalse(converted[0]["converted"])
+            self.assertTrue(diagnostics)
 
     def test_extract_figures_missing_pdf_returns_json_failure(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
